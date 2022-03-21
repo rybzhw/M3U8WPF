@@ -33,18 +33,10 @@ namespace M3U8WPF
             mainWindow = InMainWindow;
         }
 
-        private string GetTaskBaseInfo()
-        {
-            var info = new UniqueTaskParam();
-            info.URL = TextBox_URL.Text;
-            info.SavePath = TextBox_SavePath.Text;
-            info.Filename = TextBox_Filename.Text;
-
-            return JsonSerializer.Serialize(info);
-        }
-
         private void StartDownload(object sender, RoutedEventArgs e)
         {
+            Button_GO.IsEnabled = false;
+
             if (TextBox_URL.Text == "")
             {
                 System.Windows.MessageBox.Show("URL is empty!");
@@ -55,24 +47,26 @@ namespace M3U8WPF
                 System.Windows.MessageBox.Show("SavePath is empty!");
                 return;
             }
-            string FullPath = System.IO.Path.Combine(TextBox_SavePath.Text, TextBox_Filename.Text);
-            if (TextBox_Filename.Text == "" || File.Exists(FullPath))
-            {
-                TextBox_Filename.Text = GetTitleFromURL("");
-                FullPath = System.IO.Path.Combine(TextBox_SavePath.Text, TextBox_Filename.Text);
-                if (File.Exists(FullPath))
-                {
-                    System.Windows.MessageBox.Show("{0} is Exists!", FullPath);
-                    return;
-                }
-            }
 
-            Button_GO.IsEnabled = false;
-            mainWindow.StartDownload(GetTaskBaseInfo());
+            UniqueTaskParam uniqueTaskParam = new UniqueTaskParam();
+            uniqueTaskParam.URL = TextBox_URL.Text;
+            uniqueTaskParam.SavePath = TextBox_SavePath.Text;
+            uniqueTaskParam.Filename = TextBox_Filename.Text;
+
+            mainWindow.StartDownload(uniqueTaskParam);
             Button_GO.IsEnabled = true;
-            this.Close();
+
+            Close();
         }
 
+        private void TextBox_URL_MouseDoubleClick(object sender, MouseButtonEventArgs e)
+        {
+            SetUrl();
+        }
+        private void TextBox_URL_TextChanged(object sender, TextChangedEventArgs e)
+        {
+            SetFilename();
+        }
         private void Button_SavePath(object sender, RoutedEventArgs e)
         {
             var dialog = new FolderBrowserDialog();
@@ -80,8 +74,14 @@ namespace M3U8WPF
             {
                 TextBox_SavePath.Text = dialog.SelectedPath;
             }
+            AppConfigHelper.SetValue("LastSavePath", TextBox_SavePath.Text);
         }
-        public static string GetUrlFileName(string url)
+        private void TextBox_SavePath_TextChanged(object sender, TextChangedEventArgs e)
+        {
+            SetFilename();
+        }
+
+        private string GetUrlFileName(string url)
         {
             if (string.IsNullOrEmpty(url))
             {
@@ -94,10 +94,10 @@ namespace M3U8WPF
             }
             catch (Exception)
             {
-                return DateTime.Now.ToString("yyyy.MM.dd-HH.mm.ss");
+                return GetUniqueFilename();
             }
         }
-        public static string GetValidFileName(string input, string re = ".")
+        private string GetValidFileName(string input, string re = ".")
         {
             string title = input;
             foreach (char invalidChar in System.IO.Path.GetInvalidFileNameChars())
@@ -106,12 +106,14 @@ namespace M3U8WPF
             }
             return title;
         }
+        private string GetUniqueFilename()
+        {
+            return DateTime.Now.ToString("yyyy.MM.dd-HH.mm.ss");
+        }
         private string GetTitleFromURL(string url)
         {
             try
             {
-                if (File.Exists(url))
-                    return System.IO.Path.GetFileNameWithoutExtension(url);
                 if (url.StartsWith("http"))
                     url = url.Replace("http://", "").Replace("https://", "");
                 return GetUrlFileName(url);
@@ -138,45 +140,55 @@ namespace M3U8WPF
             textBox.Background = myBrush;
         }
 
-        private void Window_Loaded(object sender, RoutedEventArgs e)
+        private void SetUrl()
         {
-            if (Environment.GetCommandLineArgs().Length > 1)
+            //从剪切板读取url
+            Regex url = new Regex(@"(https?)://[-A-Za-z0-9+&@#/%?=~_|!:,.;]+[-A-Za-z0-9+&@#/%=~_|]", RegexOptions.Compiled | RegexOptions.Singleline);
+            string str = url.Match(System.Windows.Clipboard.GetText()).Value;
+            if (TextBox_URL != null)
             {
-                var ext = System.IO.Path.GetExtension(Environment.GetCommandLineArgs()[1]);
-                if (ext == ".m3u8" || ext == ".json" || ext == ".txt" || Directory.Exists(Environment.GetCommandLineArgs()[1]))
-                    TextBox_URL.Text = Environment.GetCommandLineArgs()[1];
-                if (TextBox_URL.Text != "")
+                if (str != "" && str != TextBox_URL.Text)
                 {
+                    TextBox_URL.Text = str;
                     FlashTextBox(TextBox_URL);
-                    if (!Directory.Exists(TextBox_URL.Text))
-                        TextBox_Filename.Text = GetTitleFromURL(TextBox_URL.Text);
-                }
-            }
-            else
-            {
-                //从剪切板读取url
-                Regex url = new Regex(@"(https?)://[-A-Za-z0-9+&@#/%?=~_|!:,.;]+[-A-Za-z0-9+&@#/%=~_|]", RegexOptions.Compiled | RegexOptions.Singleline);
-                string str = url.Match(System.Windows.Clipboard.GetText()).Value;
-                TextBox_URL.Text = str;
-                if (TextBox_URL.Text != "")
-                {
-                    FlashTextBox(TextBox_URL);
-                    TextBox_Filename.Text = GetTitleFromURL(TextBox_URL.Text);
                 }
             }
         }
-
-        private void TextBox_URL_MouseDoubleClick(object sender, MouseButtonEventArgs e)
+        private void SetSavePath()
         {
-            //从剪切板读取url
-            Regex url = new Regex(@"(https?)://[-A-Za-z0-9+&@#/%?=~_|!:,.;]+[-A-Za-z0-9+&@#/%=~_|]", RegexOptions.Compiled | RegexOptions.Singleline);//取已下载大小
-            string str = url.Match(System.Windows.Clipboard.GetText()).Value;
-            if (str != "" && str != TextBox_URL.Text)
+            string Result = AppConfigHelper.GetValue("LastSavePath");
+            if (string.IsNullOrEmpty(Result))
             {
-                TextBox_URL.Text = str;
-                FlashTextBox(TextBox_URL);
-                TextBox_Filename.Text = GetTitleFromURL(TextBox_URL.Text);
+                Result = AppConfigHelper.GetValue("SavePath");
             }
+
+            if (TextBox_Filename != null)
+            {
+                TextBox_SavePath.Text = Result;
+            }
+        }
+        private void SetFilename()
+        {
+            if (TextBox_Filename != null && TextBox_SavePath != null)
+            {
+                string Filename = GetTitleFromURL(TextBox_URL.Text);
+
+                string FilePath = System.IO.Path.Combine(TextBox_SavePath.Text, Filename);
+                string FullFilename = Filename + AppConfigHelper.GetValue("DefaultFileFormat");
+
+                if (File.Exists(FullFilename) || Directory.Exists(FilePath))
+                {
+                    Filename = GetUniqueFilename();
+                }
+
+                TextBox_Filename.Text = Filename;
+            }
+        }
+
+        private void Window_Loaded(object sender, RoutedEventArgs e)
+        {
+            SetUrl();
+            SetSavePath();
         }
     }
 }

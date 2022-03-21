@@ -57,7 +57,7 @@
                 </TreeView>
             </Grid>
             <Grid Grid.Column="1">
-                <ListView x:Name="ListView_TaskState">
+                <ListView x:Name="ListView_TaskState" ItemsSource="{Binding AllTaskStates}">
                     <ListView.View>
                         <GridView>
                             <GridViewColumn Header="文件名" Width="100" DisplayMemberBinding="{Binding Filename}"/>

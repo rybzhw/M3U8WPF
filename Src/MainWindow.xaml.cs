@@ -19,6 +19,47 @@ using System.Windows.Shapes;
 
 namespace M3U8WPF
 {
+    public enum TaskStateEnum
+    {
+        TSE_None,
+        TSE_Prepare,
+        TSE_Downloading,
+        TSE_Done
+    }
+
+    public class TaskState
+    {
+        // 必须有get 和set，否则xaml绑定数据获得不了值
+        public string Filename { get; set; }
+        public string VideoLength { get; set; }
+        public string Chunk { get; set; }
+        public string FileSize { get; set; }
+        public string Progress { get; set; }
+        public string Speed { get; set; }
+        public string LeftTime { get; set; }
+        public string StatePrompt { get; set; }
+        public string StateDetail { get; set; }
+
+        public string SavePath;
+        public string Url;
+
+        public Process CmdProcess;
+        public TaskStateEnum taskStateEnum { get; set; }
+
+        public TaskState()
+        {
+            VideoLength = "-";
+            Chunk = "-/-";
+            FileSize = "-/-";
+            Progress = "-";
+            Speed = "-";
+            LeftTime = "-";
+            StatePrompt = "";
+            StateDetail = "";
+            taskStateEnum = TaskStateEnum.TSE_None;
+        }
+    }
+
     /// <summary>
     /// Interaction logic for MainWindow.xaml
     /// </summary>
@@ -32,7 +73,7 @@ namespace M3U8WPF
         {
             InitializeComponent();
 
-            InitCommonTaskParam();
+            SettingConfigHelper.InitCommonTaskParam();
 
             TaskStateUpdateTimer = new System.Timers.Timer();
             TaskStateUpdateTimer.Enabled = true;
@@ -46,27 +87,40 @@ namespace M3U8WPF
             FilterTaskState = TaskStateEnum.TSE_None;
 
             DataContext = this;
-
-            ListView_TaskState.ItemsSource = AllTaskStates;
         }
         ~MainWindow()
         {
             TaskStateUpdateTimer.Stop();
         }
 
-        private string GetPrompt(TaskStateEnum InState)
+        public void StartDownload(UniqueTaskParam InUniqueTaskParam)
         {
-            switch (InState)
+            if (AllTaskStates.Exists(x => x.Url == InUniqueTaskParam.URL))
             {
-                case TaskStateEnum.TSE_Prepare:
-                    return "准备中";
-                case TaskStateEnum.TSE_Downloading:
-                    return "正在下载";
-                case TaskStateEnum.TSE_Done:
-                    return "已完成";
+                MessageBox.Show("Task exists!");
+                return;
             }
-            return "准备中";
+
+            string ExePath = SettingConfigHelper.GetCommonTaskParam().Exe;
+            string Arguments = SettingConfigHelper.GetFinalTaskParam(InUniqueTaskParam);
+
+            var NewTaskState = new TaskState();
+            NewTaskState.Url = InUniqueTaskParam.URL;
+            NewTaskState.Filename = InUniqueTaskParam.Filename;
+            NewTaskState.SavePath = InUniqueTaskParam.SavePath;
+
+            NewTaskState.CmdProcess = new Process();
+            NewTaskState.CmdProcess.StartInfo.FileName = ExePath;
+            NewTaskState.CmdProcess.StartInfo.Arguments = Arguments;
+            NewTaskState.CmdProcess.StartInfo.UseShellExecute = false;
+            NewTaskState.CmdProcess.StartInfo.CreateNoWindow = true;
+            NewTaskState.CmdProcess.StartInfo.RedirectStandardOutput = true;
+            NewTaskState.CmdProcess.Start();
+
+            AllTaskStates.Add(NewTaskState);
+            ChildProcessTracker.AddProcess(NewTaskState.CmdProcess);
         }
+
         private void TimerUp(object sender, System.Timers.ElapsedEventArgs e)
         {
             for (int i = 0; i < AllTaskStates.Count; i++)
@@ -138,144 +192,63 @@ namespace M3U8WPF
             else
                 InState.StateDetail = InProcess;
         }
+        private void RefreshListView()
+        {
+            try
+            {
+                ListView_TaskState.Dispatcher.Invoke(
+                    new Action(delegate
+                    {
+                        ListView_TaskState.Items.Refresh();
+                    }));
+            }
+            catch (Exception)
+            {
+
+            }
+        }
+        private string GetPrompt(TaskStateEnum InState)
+        {
+            switch (InState)
+            {
+                case TaskStateEnum.TSE_Prepare:
+                    return "准备中";
+                case TaskStateEnum.TSE_Downloading:
+                    return "正在下载";
+                case TaskStateEnum.TSE_Done:
+                    return "已完成";
+            }
+            return "准备中";
+        }
+        private void TaskStateEnumUpdate(ref TaskState InOrg, TaskStateEnum InNewEnum)
+        {
+            if (InOrg.taskStateEnum == InNewEnum)
+            {
+                return;
+            }
+            InOrg.taskStateEnum = InNewEnum;
+            InOrg.StatePrompt = GetPrompt(InOrg.taskStateEnum);
+
+            if (ListView_TaskState != null)
+            {
+                ListView_TaskState.Dispatcher.Invoke(
+                    new Action(delegate
+                    {
+                        ListView_TaskState.Items.Filter = TaskStateFilter;
+                    }));
+            }
+        }
 
         public void Btn_CreateTask_Click(object sender, RoutedEventArgs e)
         {
             CreateTask createTask = new CreateTask(this);
             createTask.Show();
         }
-
-        private void InitCommonTaskParam()
-        {
-            SettingConfigHelper.InitCommonTaskParam();
-        }
-
-        private string GetCommonTaskParam()
-        {
-            //commonTaskParam.Exe = @"C:\GitSSD\CSharpOutput\bin\Debug\net5.0\CSharpOutput.exe";
-
-            return JsonSerializer.Serialize(SettingConfigHelper.GetCommonTaskParam());
-        }
-
-        private string GetFinalTaskParam(CommonTaskParam InCommon, UniqueTaskParam InUnique)
-        {
-            StringBuilder sb = new StringBuilder();
-            sb.Append("\"" + InUnique.URL + "\" ");
-            if (!string.IsNullOrEmpty(InUnique.SavePath))
-            {
-                if (InUnique.SavePath.Trim('\\').EndsWith(":")) //根目录
-                {
-                    sb.Append("--workDir \"" + InUnique.SavePath.Trim('\\') + "\\\\" + "\" ");
-                }
-                else
-                {
-                    sb.Append("--workDir \"" + InUnique.SavePath.Trim('\\') + "\" ");
-                }
-            }
-            if (!string.IsNullOrEmpty(InUnique.Filename))
-                sb.Append("--saveName \"" + InUnique.Filename + "\" ");
-
-            {
-                if (!string.IsNullOrEmpty(InCommon.Headers))
-                    sb.Append("--headers \"" + InCommon.Headers + "\" ");
-                if (!string.IsNullOrEmpty(InCommon.BaseUrl))
-                    sb.Append("--baseUrl \"" + InCommon.BaseUrl + "\" ");
-                if (!string.IsNullOrEmpty(InCommon.MuxSetJson))
-                    sb.Append("--muxSetJson \"" + InCommon.MuxSetJson + "\" ");
-                if (InCommon.MaxThreads != "32")
-                    sb.Append("--maxThreads \"" + InCommon.MaxThreads + "\" ");
-                if (InCommon.MinThreads != "16")
-                    sb.Append("--minThreads \"" + InCommon.MinThreads + "\" ");
-                if (InCommon.RetryCount != "15")
-                    sb.Append("--retryCount \"" + InCommon.RetryCount + "\" ");
-                if (InCommon.TimeOut != "10")
-                    sb.Append("--timeOut \"" + InCommon.TimeOut + "\" ");
-                if (InCommon.StopSpeed != "0")
-                    sb.Append("--stopSpeed \"" + InCommon.StopSpeed + "\" ");
-                if (InCommon.MaxSpeed != "0")
-                    sb.Append("--maxSpeed \"" + InCommon.MaxSpeed + "\" ");
-                if (InCommon.Key != "")
-                {
-                    if (File.Exists(InCommon.Key))
-                        sb.Append("--useKeyFile \"" + InCommon.Key + "\" ");
-                    else
-                        sb.Append("--useKeyBase64 \"" + InCommon.Key + "\" ");
-                }
-                if (InCommon.IV != "")
-                {
-                    sb.Append("--useKeyIV \"" + InCommon.IV + "\" ");
-                }
-                if (InCommon.Proxy != "")
-                {
-                    sb.Append("--proxyAddress \"" + InCommon.Proxy.Trim() + "\" ");
-                }
-                if (InCommon.Del == true)
-                    sb.Append("--enableDelAfterDone ");
-                if (InCommon.FastStart == true)
-                    sb.Append("--enableMuxFastStart ");
-                if (InCommon.BinaryMerge == true)
-                    sb.Append("--enableBinaryMerge ");
-                if (InCommon.ParserOnly == true)
-                    sb.Append("--enableParseOnly ");
-                if (InCommon.DisableDate == true)
-                    sb.Append("--disableDateInfo ");
-                if (InCommon.DisableMerge == true)
-                    sb.Append("--noMerge ");
-                if (InCommon.DisableProxy == true)
-                    sb.Append("--noProxy ");
-                if (InCommon.DisableCheck == true)
-                    sb.Append("--disableIntegrityCheck ");
-                if (InCommon.AudioOnly == true)
-                    sb.Append("--enableAudioOnly ");
-                if (InCommon.RangeStart != "00:00:00" || InCommon.RangeEnd != "00:00:00")
-                {
-                    sb.Append($"--downloadRange \"{InCommon.RangeStart}-{InCommon.RangeEnd}\"");
-                }
-            }
-
-            return sb.ToString();
-        }
-
-        public void StartDownload(string InParam)
-        {
-            var uniqueTaskParam = JsonSerializer.Deserialize<UniqueTaskParam>(InParam);
-
-            string ExePath = SettingConfigHelper.GetCommonTaskParam().Exe;
-            string Arguments = GetFinalTaskParam(SettingConfigHelper.GetCommonTaskParam(), uniqueTaskParam);
-
-            if (AllTaskStates.Exists(x => x.Filename == uniqueTaskParam.Filename))
-            {
-                MessageBox.Show("uniqueTaskParam.Filename exists!");
-                return;
-            }
-
-            var NewTaskState = new TaskState();
-            NewTaskState.Filename = uniqueTaskParam.Filename;
-            NewTaskState.SavePath = uniqueTaskParam.SavePath;
-
-            NewTaskState.CmdProcess = new Process();
-            NewTaskState.CmdProcess.StartInfo.FileName = ExePath;
-            NewTaskState.CmdProcess.StartInfo.Arguments = Arguments;
-            NewTaskState.CmdProcess.StartInfo.UseShellExecute = false;
-            NewTaskState.CmdProcess.StartInfo.CreateNoWindow = true;
-            NewTaskState.CmdProcess.StartInfo.RedirectStandardOutput = true;
-            NewTaskState.CmdProcess.Start();
-
-            AllTaskStates.Add(NewTaskState);
-            ChildProcessTracker.AddProcess(NewTaskState.CmdProcess);
-        }
-
-        private void CmdProcess_OutputDataReceived(object sender, DataReceivedEventArgs e)
-        {
-            throw new NotImplementedException();
-        }
-
         private void Btn_Setting_Click(object sender, RoutedEventArgs e)
         {
             var createSettings = new Settings();
             createSettings.Show();
         }
-
         private void Btn_Delete_Click(object sender, RoutedEventArgs e)
         {
             if (ListView_TaskState.SelectedItems.Count <= 0)
@@ -299,46 +272,6 @@ namespace M3U8WPF
 
             RefreshListView();
         }
-
-        public void DeleteTask(int InIndex)
-        {
-            if (InIndex < 0 || InIndex >= AllTaskStates.Count)
-                return;
-
-            TaskState DeleteTask = AllTaskStates[InIndex];
-            // Kill process 
-            if (DeleteTask.CmdProcess != null)
-                DeleteTask.CmdProcess.Kill();
-
-            // Remove file and directory
-            string DeletePath = System.IO.Path.Combine(DeleteTask.SavePath, DeleteTask.Filename);
-            if (Directory.Exists(DeletePath))
-                Directory.Delete(DeletePath, true);
-
-            string DeleteFile = DeletePath + ".mp4";
-            if (File.Exists(DeleteFile))
-                File.Delete(DeleteFile);
-
-            // Other
-            AllTaskStates.RemoveAt(InIndex);
-        }
-
-        private void RefreshListView()
-        {
-            try
-            {
-                ListView_TaskState.Dispatcher.Invoke(
-                    new Action(delegate
-                    {
-                        ListView_TaskState.Items.Refresh();
-                    }));
-            }
-            catch (Exception)
-            {
-
-            }
-        }
-
         private void Btn_DeleteAll_Click(object sender, RoutedEventArgs e)
         {
             if (AllTaskStates == null || AllTaskStates.Count <= 0)
@@ -348,24 +281,6 @@ namespace M3U8WPF
                 DeleteTask(i);
             }
             RefreshListView();
-        }
-        private void TaskStateEnumUpdate(ref TaskState InOrg, TaskStateEnum InNewEnum)
-        {
-            if (InOrg.taskStateEnum == InNewEnum)
-            {
-                return;
-            }
-            InOrg.taskStateEnum = InNewEnum;
-            InOrg.StatePrompt = GetPrompt(InOrg.taskStateEnum);
-
-            if (ListView_TaskState != null)
-            {
-                ListView_TaskState.Dispatcher.Invoke(
-                    new Action(delegate
-                    {
-                        ListView_TaskState.Items.Filter = TaskStateFilter;
-                    }));
-            }
         }
 
         private bool TaskStateFilter(object obj)
@@ -385,7 +300,6 @@ namespace M3U8WPF
             }
             return true;
         }
-
         private void Filter_None_Selected(object sender, RoutedEventArgs e)
         {
             FilterTaskState = TaskStateEnum.TSE_None;
@@ -394,7 +308,6 @@ namespace M3U8WPF
                 ListView_TaskState.Items.Filter = TaskStateFilter;
             }
         }
-
         private void Filter_Downloading_Selected(object sender, RoutedEventArgs e)
         {
             FilterTaskState = TaskStateEnum.TSE_Downloading;
@@ -403,7 +316,6 @@ namespace M3U8WPF
                 ListView_TaskState.Items.Filter = TaskStateFilter;
             }
         }
-
         private void Filter_Done_Selected(object sender, RoutedEventArgs e)
         {
             FilterTaskState = TaskStateEnum.TSE_Done;
@@ -411,6 +323,37 @@ namespace M3U8WPF
             {
                 ListView_TaskState.Items.Filter = TaskStateFilter;
             }
+        }
+
+        public void DeleteTask(int InIndex)
+        {
+            if (InIndex < 0 || InIndex >= AllTaskStates.Count)
+                return;
+
+            TaskState DeleteTask = AllTaskStates[InIndex];
+            // Kill process 
+            if (DeleteTask.CmdProcess != null)
+                DeleteTask.CmdProcess.Kill();
+
+            // Remove file and directory
+            string DeletePath = System.IO.Path.Combine(DeleteTask.SavePath, DeleteTask.Filename);
+            try
+            {
+                if (Directory.Exists(DeletePath))
+                    Directory.Delete(DeletePath, true);
+
+                string DeleteFile = DeletePath + AppConfigHelper.GetValue("DefaultFileFormat");
+                if (File.Exists(DeleteFile))
+                    File.Delete(DeleteFile);
+            }
+            catch (Exception e)
+            {
+                AppLogHelper.Error("DeleteTask delete failed. File:{0} Url:{1} \r\n {2}", 
+                    DeletePath, DeleteTask.Url, e.ToString());
+            }
+
+            // Other
+            AllTaskStates.RemoveAt(InIndex);
         }
     }
 }
