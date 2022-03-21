@@ -6,6 +6,7 @@ using System.Linq;
 using System.Text;
 using System.Text.Json;
 using System.Text.RegularExpressions;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
@@ -43,6 +44,7 @@ namespace M3U8WPF
         public string SavePath;
         public string Url;
 
+        public ReadProcessThread ReadCmdProcess;
         public Process CmdProcess;
         public TaskStateEnum taskStateEnum { get; set; }
 
@@ -57,6 +59,45 @@ namespace M3U8WPF
             StatePrompt = "";
             StateDetail = "";
             taskStateEnum = TaskStateEnum.TSE_None;
+        }
+        public override string ToString()
+        {
+            return string.Format("URL:{0} Filename:{1} StatePrompt:{2} StateDetail:{3}", 
+                Url, Filename, StatePrompt, StateDetail);
+        }
+    }
+
+    public class ReadProcessThread
+    {
+        private string Output;
+        private Thread thread;
+        public ReadProcessThread(Process InProcess)
+        {
+            thread = new Thread(() => 
+            {
+                while (InProcess != null)
+                {
+                    if (!InProcess.StandardOutput.EndOfStream)
+                        Output = InProcess.StandardOutput.ReadLine();
+                    Thread.Sleep(100);
+                }
+            });
+            thread.Start();
+        }
+
+        ~ReadProcessThread()
+        {
+            try
+            {
+                thread.Interrupt();
+            }
+            catch (Exception)
+            {
+            }
+        }
+        public string GetOutput()
+        {
+            return Output;
         }
     }
 
@@ -73,6 +114,7 @@ namespace M3U8WPF
         {
             InitializeComponent();
 
+            AppLogHelper.InitLog();
             SettingConfigHelper.InitCommonTaskParam();
 
             TaskStateUpdateTimer = new System.Timers.Timer();
@@ -104,10 +146,11 @@ namespace M3U8WPF
             string ExePath = SettingConfigHelper.GetCommonTaskParam().Exe;
             string Arguments = SettingConfigHelper.GetFinalTaskParam(InUniqueTaskParam);
 
-            var NewTaskState = new TaskState();
+            TaskState NewTaskState = new TaskState();
             NewTaskState.Url = InUniqueTaskParam.URL;
             NewTaskState.Filename = InUniqueTaskParam.Filename;
             NewTaskState.SavePath = InUniqueTaskParam.SavePath;
+            TaskStateEnumUpdate(ref NewTaskState, TaskStateEnum.TSE_Prepare);
 
             NewTaskState.CmdProcess = new Process();
             NewTaskState.CmdProcess.StartInfo.FileName = ExePath;
@@ -117,8 +160,16 @@ namespace M3U8WPF
             NewTaskState.CmdProcess.StartInfo.RedirectStandardOutput = true;
             NewTaskState.CmdProcess.Start();
 
+            NewTaskState.ReadCmdProcess = new ReadProcessThread(NewTaskState.CmdProcess);
+            AppLogHelper.Log("MainWindow StartDownload Process ExePath={0} Arguments={1}", ExePath, Arguments);
+
             AllTaskStates.Add(NewTaskState);
             ChildProcessTracker.AddProcess(NewTaskState.CmdProcess);
+
+            AppLogHelper.Log("MainWindow StartDownload AllTaskStates {0} TaskState{1}",
+                AllTaskStates.Count, NewTaskState.ToString());
+
+            UpdateFilter();
         }
 
         private void TimerUp(object sender, System.Timers.ElapsedEventArgs e)
@@ -131,8 +182,15 @@ namespace M3U8WPF
                     continue;
                 if (State.CmdProcess.HasExited)
                 {
+                    State.Chunk = "";
+                    State.Progress = "";
+                    State.FileSize = "";
+                    State.Speed = "";
+                    State.LeftTime = "";
+                    State.StateDetail = "";
                     TaskStateEnumUpdate(ref State, TaskStateEnum.TSE_Done);
                     State.CmdProcess = null;
+                    State.ReadCmdProcess = null;
                     continue;
                 }
 
@@ -140,9 +198,10 @@ namespace M3U8WPF
 
                 try
                 {
-                    if (!State.CmdProcess.StandardOutput.EndOfStream)
-                        OutputStr = State.CmdProcess.StandardOutput.ReadLine();
+                    //if (!State.CmdProcess.StandardOutput.EndOfStream)
+                    //    OutputStr = State.CmdProcess.StandardOutput.ReadLine();
 
+                    OutputStr = State.ReadCmdProcess.GetOutput();
                     if (!string.IsNullOrEmpty(OutputStr))
                     {
                         ParseProcess(ref State, OutputStr);
@@ -183,7 +242,6 @@ namespace M3U8WPF
                         break;
                     }
                 }
-                TaskStateEnumUpdate(ref InState, TaskStateEnum.TSE_Prepare);
             }
 
             Pattern = @" .*";
@@ -229,14 +287,9 @@ namespace M3U8WPF
             InOrg.taskStateEnum = InNewEnum;
             InOrg.StatePrompt = GetPrompt(InOrg.taskStateEnum);
 
-            if (ListView_TaskState != null)
-            {
-                ListView_TaskState.Dispatcher.Invoke(
-                    new Action(delegate
-                    {
-                        ListView_TaskState.Items.Filter = TaskStateFilter;
-                    }));
-            }
+            AppLogHelper.Log("MainWindow TaskStateEnumUpdate TaskState{0}", InOrg.ToString());
+
+            UpdateFilter();
         }
 
         public void Btn_CreateTask_Click(object sender, RoutedEventArgs e)
@@ -270,6 +323,7 @@ namespace M3U8WPF
                 }
             }
 
+            UpdateFilter();
             RefreshListView();
         }
         private void Btn_DeleteAll_Click(object sender, RoutedEventArgs e)
@@ -280,9 +334,21 @@ namespace M3U8WPF
             {
                 DeleteTask(i);
             }
+            UpdateFilter();
             RefreshListView();
         }
 
+        private void UpdateFilter()
+        {
+            if (ListView_TaskState != null)
+            {
+                ListView_TaskState.Dispatcher.Invoke(
+                    new Action(delegate
+                    {
+                        ListView_TaskState.Items.Filter = TaskStateFilter;
+                    }));
+            }
+        }
         private bool TaskStateFilter(object obj)
         {
             if (obj is TaskState taskState)
@@ -303,26 +369,17 @@ namespace M3U8WPF
         private void Filter_None_Selected(object sender, RoutedEventArgs e)
         {
             FilterTaskState = TaskStateEnum.TSE_None;
-            if (ListView_TaskState != null)
-            {
-                ListView_TaskState.Items.Filter = TaskStateFilter;
-            }
+            UpdateFilter();
         }
         private void Filter_Downloading_Selected(object sender, RoutedEventArgs e)
         {
             FilterTaskState = TaskStateEnum.TSE_Downloading;
-            if (ListView_TaskState != null)
-            {
-                ListView_TaskState.Items.Filter = TaskStateFilter;
-            }
+            UpdateFilter();
         }
         private void Filter_Done_Selected(object sender, RoutedEventArgs e)
         {
             FilterTaskState = TaskStateEnum.TSE_Done;
-            if (ListView_TaskState != null)
-            {
-                ListView_TaskState.Items.Filter = TaskStateFilter;
-            }
+            UpdateFilter();
         }
 
         public void DeleteTask(int InIndex)

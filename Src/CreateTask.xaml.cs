@@ -53,6 +53,7 @@ namespace M3U8WPF
             uniqueTaskParam.SavePath = TextBox_SavePath.Text;
             uniqueTaskParam.Filename = TextBox_Filename.Text;
 
+            AppLogHelper.Log("CreateTask StartDownload uniqueTaskParam {0}", uniqueTaskParam.ToString());
             mainWindow.StartDownload(uniqueTaskParam);
             Button_GO.IsEnabled = true;
 

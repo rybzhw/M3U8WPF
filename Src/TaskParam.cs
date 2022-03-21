@@ -14,6 +14,11 @@ namespace M3U8WPF
         public string URL { get; set; }
         public string SavePath { get; set; }
         public string Filename { get; set; }
+
+        public override string ToString()
+        {
+            return string.Format("URL:{0} SavePath:{1} Filename:{2}", URL, SavePath, Filename);
+        }
     }
 
     public class CommonTaskParam

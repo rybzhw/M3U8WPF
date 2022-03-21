@@ -60,11 +60,11 @@
                 <ListView x:Name="ListView_TaskState" ItemsSource="{Binding AllTaskStates}">
                     <ListView.View>
                         <GridView>
-                            <GridViewColumn Header="文件名" Width="100" DisplayMemberBinding="{Binding Filename}"/>
+                            <GridViewColumn Header="文件名" Width="130" DisplayMemberBinding="{Binding Filename}"/>
                             <GridViewColumn Header="时长" Width="80" DisplayMemberBinding="{Binding VideoLength}"/>
                             <GridViewColumn Header="分片" Width="80" DisplayMemberBinding="{Binding Chunk}"/>
                             <GridViewColumn Header="进度" Width="60" DisplayMemberBinding="{Binding Progress}"/>
-                            <GridViewColumn Header="大小" Width="100" DisplayMemberBinding="{Binding FileSize}"/>
+                            <GridViewColumn Header="大小" Width="120" DisplayMemberBinding="{Binding FileSize}"/>
                             <GridViewColumn Header="速度" Width="60" DisplayMemberBinding="{Binding Speed}"/>
                             <GridViewColumn Header="剩余时间" Width="60" DisplayMemberBinding="{Binding LeftTime}"/>
                             <GridViewColumn Header="状态" Width="60" DisplayMemberBinding="{Binding StatePrompt}"/>
