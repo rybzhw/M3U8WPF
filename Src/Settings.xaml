@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:M3U8WPF"
         mc:Ignorable="d"
-        Title="Settings" Height="450" Width="600" Background="#FF252526" WindowStartupLocation="CenterScreen" ResizeMode="NoResize" Closing="Window_Closing" Loaded="Window_Loaded">
+        Title="设置" Height="450" Width="600" Background="#FF252526" WindowStartupLocation="CenterScreen" ResizeMode="NoResize" Closing="Window_Closing" Loaded="Window_Loaded">
     <Grid Margin="30,30,30,0">
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="185*"/>

@@ -5,8 +5,8 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:M3U8WPF"
         mc:Ignorable="d"
-        Title="CreateTask" Height="300" Width="500" Background="#FF252526" WindowStartupLocation="CenterScreen" ResizeMode="NoResize" Loaded="Window_Loaded">
-    <Grid>
+        Title="新建任务" Height="300" Width="500" Background="#FF252526" WindowStartupLocation="CenterScreen" ResizeMode="NoResize" Loaded="Window_Loaded">
+    <Grid Margin="0,30,0,30">
         <Grid.RowDefinitions>
             <RowDefinition Height="50"></RowDefinition>
             <RowDefinition Height="50"></RowDefinition>
@@ -19,7 +19,7 @@
                 <ColumnDefinition Width="80"></ColumnDefinition>
                 <ColumnDefinition></ColumnDefinition>
             </Grid.ColumnDefinitions>
-            <Label Content="URL" HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="#FFF1F1F1"/>
+            <Label Content="URL" HorizontalAlignment="Right" VerticalAlignment="Center" Foreground="#FFF1F1F1" Margin="0,0,5,0"/>
             <TextBox x:Name="TextBox_URL" Grid.Column="1" HorizontalAlignment="Stretch" Margin="0,0,30,0" TextWrapping="Wrap" VerticalAlignment="Center" Background="#FF333337" Foreground="#FFF1F1F1" BorderBrush="#FF3F3F46" MouseDoubleClick="TextBox_URL_MouseDoubleClick" TextChanged="TextBox_URL_TextChanged"/>
         </Grid>
         <Grid Grid.Row="1">
@@ -28,23 +28,23 @@
                 <ColumnDefinition Width="340"></ColumnDefinition>
                 <ColumnDefinition></ColumnDefinition>
             </Grid.ColumnDefinitions>
-            <Label Content="保存路径" HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="#FFF1F1F1"/>
+            <Label Content="保存路径" HorizontalAlignment="Right" VerticalAlignment="Center" Foreground="#FFF1F1F1" Margin="0,0,5,0"/>
             <TextBox x:Name="TextBox_SavePath" Grid.Column="1" HorizontalAlignment="Stretch" Margin="0,0,0,0" TextWrapping="Wrap" VerticalAlignment="Center" Background="#FF333337" Foreground="#FFF1F1F1" BorderBrush="#FF3F3F46" TextChanged="TextBox_SavePath_TextChanged" IsEnabled="False"/>
-            <Button Grid.Column="2" Content="..." Width="30" Height="25" Click="Button_SavePath"></Button>
+            <Button Grid.Column="2" Content="..." Width="30" Height="25" Click="Button_SavePath" BorderBrush="#FF626263" Background="{x:Null}" Foreground="#FFF1F1F1"></Button>
         </Grid>
         <Grid Grid.Row="2">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="80"></ColumnDefinition>
                 <ColumnDefinition></ColumnDefinition>
             </Grid.ColumnDefinitions>
-            <Label Content="文件名：" HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="#FFF1F1F1"/>
+            <Label Content="文件名" HorizontalAlignment="Right" VerticalAlignment="Center" Foreground="#FFF1F1F1" Margin="0,0,5,0"/>
             <TextBox x:Name="TextBox_Filename" Grid.Column="1" HorizontalAlignment="Stretch" Margin="0,0,30,0" TextWrapping="Wrap" VerticalAlignment="Center" Background="#FF333337" Foreground="#FFF1F1F1" BorderBrush="#FF3F3F46"/>
         </Grid>
         <Grid Grid.Row="3">
             <Label Content="Tips：如果文件已存在，将随机新文件名" HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="#FFF1F1F1"/>
         </Grid>
         <Grid Grid.Row="4" Grid.ColumnSpan="1" HorizontalAlignment="Center" VerticalAlignment="Center">
-            <Button x:Name="Button_GO" Width="200" Height="40" Content="立即下载" Click="StartDownload"></Button>
+            <Button x:Name="Button_GO" Width="200" Height="40" Content="立即下载" Click="StartDownload" BorderBrush="#FF626263" Background="{x:Null}" Foreground="#FFF1F1F1"></Button>
         </Grid>
     </Grid>
 </Window>

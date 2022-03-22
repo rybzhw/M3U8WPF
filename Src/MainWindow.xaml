@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:M3U8WPF"
         mc:Ignorable="d"
-        Title="MainWindow" Height="720" Width="1000" Background="#FF252526" WindowStartupLocation="CenterScreen">
+        Title="M3U8DL-UI" Height="720" Width="1000" Background="#FF252526" WindowStartupLocation="CenterScreen">
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="50"></RowDefinition>
@@ -21,26 +21,26 @@
                 <ColumnDefinition Width="100"></ColumnDefinition>
                 <ColumnDefinition></ColumnDefinition>
             </Grid.ColumnDefinitions>
-            <Grid Grid.Column="0" Height="60" VerticalAlignment="Center" HorizontalAlignment="Stretch">
-                <Button x:Name="Btn_CreateTask" Content="新建任务" Click="Btn_CreateTask_Click" Height="60" VerticalAlignment="Center"></Button>
+            <Grid Grid.Column="0">
+                <Button x:Name="Btn_CreateTask" Content="新建任务" Click="Btn_CreateTask_Click" BorderBrush="#FF626263" Background="{x:Null}" Foreground="#FFF1F1F1"></Button>
             </Grid>
             <Grid Grid.Column="1">
-                <Button x:Name="Btn_Continue" Content="继续" IsEnabled="False" ></Button>
+                <Button x:Name="Btn_Continue" Content="继续(X)" BorderBrush="#FF626263" Background="{x:Null}" Foreground="#FF833C3C" />
             </Grid>
             <Grid Grid.Column="2">
-                <Button x:Name="Btn_Stop" Content="停止" IsEnabled="False" ></Button>
+                <Button x:Name="Btn_Stop" Content="停止(X)"  BorderBrush="#FF626263" Background="{x:Null}" Foreground="#FF833C3C" ></Button>
             </Grid>
             <Grid Grid.Column="3">
-                <Button x:Name="Btn_StopAll" Content="全部停止" IsEnabled="False" ></Button>
+                <Button x:Name="Btn_StopAll" Content="全部停止(X)" BorderBrush="#FF626263" Background="{x:Null}" Foreground="#FF833C3C"></Button>
             </Grid>
             <Grid Grid.Column="4">
-                <Button x:Name="Btn_Delete" Content="删除" Click="Btn_Delete_Click" ></Button>
+                <Button x:Name="Btn_Delete" Content="删除" Click="Btn_Delete_Click"  BorderBrush="#FF626263" Background="{x:Null}" Foreground="#FFF1F1F1"></Button>
             </Grid>
             <Grid Grid.Column="5">
-                <Button x:Name="Btn_DeleteAll" Content="全部删除" Click="Btn_DeleteAll_Click" ></Button>
+                <Button x:Name="Btn_DeleteAll" Content="全部删除" Click="Btn_DeleteAll_Click"  BorderBrush="#FF626263" Background="{x:Null}" Foreground="#FFF1F1F1"></Button>
             </Grid>
             <Grid Grid.Column="6" HorizontalAlignment="Right" Width="60">
-                <Button x:Name="Btn_Setting" Content="设置" Click="Btn_Setting_Click" ></Button>
+                <Button x:Name="Btn_Setting" Content="设置" Click="Btn_Setting_Click" BorderBrush="#FF626263" Background="{x:Null}" Foreground="#FFF1F1F1"></Button>
             </Grid>
         </Grid>
         <Grid Grid.Row="1" Grid.Column="2">
