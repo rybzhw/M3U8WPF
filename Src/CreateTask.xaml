@@ -8,9 +8,9 @@
         Title="新建任务" Height="300" Width="500" Background="#FF252526" WindowStartupLocation="CenterScreen" ResizeMode="NoResize" Loaded="Window_Loaded">
     <Grid Margin="0,30,0,30">
         <Grid.RowDefinitions>
-            <RowDefinition Height="50"></RowDefinition>
-            <RowDefinition Height="50"></RowDefinition>
-            <RowDefinition Height="50"></RowDefinition>
+            <RowDefinition Height="40"></RowDefinition>
+            <RowDefinition Height="40"></RowDefinition>
+            <RowDefinition Height="40"></RowDefinition>
             <RowDefinition Height="30"></RowDefinition>
             <RowDefinition></RowDefinition>
         </Grid.RowDefinitions>
@@ -30,7 +30,7 @@
             </Grid.ColumnDefinitions>
             <Label Content="保存路径" HorizontalAlignment="Right" VerticalAlignment="Center" Foreground="#FFF1F1F1" Margin="0,0,5,0"/>
             <TextBox x:Name="TextBox_SavePath" Grid.Column="1" HorizontalAlignment="Stretch" Margin="0,0,0,0" TextWrapping="Wrap" VerticalAlignment="Center" Background="#FF333337" Foreground="#FFF1F1F1" BorderBrush="#FF3F3F46" TextChanged="TextBox_SavePath_TextChanged" IsEnabled="False"/>
-            <Button Grid.Column="2" Content="..." Width="30" Height="25" Click="Button_SavePath" BorderBrush="#FF626263" Background="{x:Null}" Foreground="#FFF1F1F1"></Button>
+            <Button Grid.Column="2" Content="..." Width="30" Height="25" Click="Button_SavePath" BorderBrush="#FF626263" Background="{x:Null}" Foreground="#FFF1F1F1" Margin="0,0,10,0"></Button>
         </Grid>
         <Grid Grid.Row="2">
             <Grid.ColumnDefinitions>
