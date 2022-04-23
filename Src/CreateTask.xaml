@@ -41,7 +41,7 @@
             <TextBox x:Name="TextBox_Filename" Grid.Column="1" HorizontalAlignment="Stretch" Margin="0,0,30,0" TextWrapping="Wrap" VerticalAlignment="Center" Background="#FF333337" Foreground="#FFF1F1F1" BorderBrush="#FF3F3F46"/>
         </Grid>
         <Grid Grid.Row="3">
-            <Label Content="Tips：如果文件已存在，将随机新文件名" HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="#FFF1F1F1"/>
+            <Label Content="Tips：文件名默认采用当前时间" HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="#FFF1F1F1"/>
         </Grid>
         <Grid Grid.Row="4" Grid.ColumnSpan="1" HorizontalAlignment="Center" VerticalAlignment="Center">
             <Button x:Name="Button_GO" Width="200" Height="40" Content="立即下载" Click="StartDownload" BorderBrush="#FF626263" Background="{x:Null}" Foreground="#FFF1F1F1"></Button>

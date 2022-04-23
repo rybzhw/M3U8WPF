@@ -162,6 +162,10 @@ namespace M3U8WPF
             {
                 Result = AppConfigHelper.GetValue("SavePath");
             }
+            if (string.IsNullOrEmpty(Result))
+            {
+                Result = System.IO.Directory.GetCurrentDirectory();
+            }
 
             if (TextBox_Filename != null)
             {
@@ -172,7 +176,7 @@ namespace M3U8WPF
         {
             if (TextBox_Filename != null && TextBox_SavePath != null)
             {
-                string Filename = GetTitleFromURL(TextBox_URL.Text);
+                string Filename = GetUniqueFilename();
 
                 string FilePath = System.IO.Path.Combine(TextBox_SavePath.Text, Filename);
                 string FullFilename = Filename + AppConfigHelper.GetValue("DefaultFileFormat");

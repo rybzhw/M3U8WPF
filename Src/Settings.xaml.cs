@@ -118,6 +118,11 @@ namespace M3U8WPF
             CheckBox_DisableMerge.IsChecked = SettingConfigHelper.GetCommonTaskParam().DisableMerge;
             CheckBox_DisableProxy.IsChecked = SettingConfigHelper.GetCommonTaskParam().DisableProxy;
             CheckBox_AudioOnly.IsChecked = SettingConfigHelper.GetCommonTaskParam().AudioOnly;
+
+            if (string.IsNullOrEmpty(TextBox_WorkDir.Text))
+            {
+                TextBox_WorkDir.Text = System.IO.Directory.GetCurrentDirectory();
+            }
         }
 
         private void Button_SelectDir_Click(object sender, RoutedEventArgs e)
